@@ -89,22 +89,19 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('peer-registered', { peerId, roomId });
   });
 
-  // Sinkronisasi countdown - host memulai, semua ikut
-  socket.on('start-countdown', ({ roomId, duration }) => {
-    socket.to(roomId).emit('countdown-start', { duration, initiator: socket.id });
+  // Sinkronisasi sesi foto (host memulai, partner ikut)
+  socket.on('session-start', ({ roomId }) => {
+    socket.to(roomId).emit('session-start', { initiator: socket.id });
   });
 
-  // Sinyal untuk jepret sinkron
+  socket.on('session-end', ({ roomId }) => {
+    socket.to(roomId).emit('session-end', { initiator: socket.id });
+  });
+
   socket.on('shutter', ({ roomId }) => {
     socket.to(roomId).emit('shutter', { initiator: socket.id });
   });
 
-  // Sync mode rekam
-  socket.on('sync-recorder', ({ roomId, mode, duration }) => {
-    socket.to(roomId).emit('sync-recorder', { mode, duration, initiator: socket.id });
-  });
-
-  // Sinkron kamera flip
   socket.on('camera-flip', ({ roomId }) => {
     socket.to(roomId).emit('camera-flip', { initiator: socket.id });
   });

@@ -1,81 +1,127 @@
-// Photobooth Lifmar - Capture engine (countdown sinkron + jepret ke canvas)
+// Photobooth Lifmar - Capture engine (sesi 4 menit)
+// Klik 'Foto' = mulai sesi 4 menit + rekam video. Selama sesi, user bebas
+// klik 'Jepret' kapan saja untuk menambah pose. Pas 4 menit habis, sesi
+// berhenti otomatis, video tersimpan & semua foto terkumpul.
 
 const LifmarCapture = (() => {
-  const snapshots = []; // array of ImageData/canvas (foto dari stage)
-  let isCapturing = false;
+  const snapshots = [];
+  const SESSION_MS = 4 * 60 * 1000; // 4 menit
+  let sessionActive = false;
+  let sessionTimer = null;
+  let sessionStartTs = 0;
 
   function getSnapshots() { return snapshots; }
   function clear() { snapshots.length = 0; }
+  function isActive() { return sessionActive; }
+  function remainingMs() {
+    if (!sessionActive) return 0;
+    return Math.max(0, SESSION_MS - (Date.now() - sessionStartTs));
+  }
 
-  // Mulai countdown (host trigger -> semua sinkron via socket)
-  async function startCountdown() {
-    if (isCapturing) return;
-    if (snapshots.length >= 8) { alert('Maksimal 8 pose (2 lembar photostrip). Reset dulu untuk foto baru.'); return; }
+  // Mulai sesi foto (dipanggil saat tombol 'Foto' diklik)
+  async function startSession() {
+    if (sessionActive) return;
 
-    // Mulai rekam momen (local) - remote juga start via socket
+    // Mulai rekam video (seluruh sesi)
     LifmarReplay.reset();
-    const started = LifmarReplay.start();
-    // Sinkronkan recorder & countdown ke remote
-    window.LifmarSocket.syncRecorder();
-    window.LifmarSocket.startCountdownRemote();
-
-    isCapturing = true;
-    const cd = document.getElementById('countdown');
-
-    // Buat pose selanjutnya otomatis: ambil 3 countdown berturut-turut
-    // yang mau difoto = semua member berpose serentak saat countdown
-    await runSequence(cd);
-    isCapturing = false;
-  }
-
-  // Dijalankan saat menerima sinyal start-countdown dari remote
-  async function onRemoteStart() {
-    if (isCapturing) return;
-    isCapturing = true;
-    const cd = document.getElementById('countdown');
-    await runSequence(cd);
-    isCapturing = false;
-  }
-
-  async function runSequence(cd) {
-    // Countdown 3->2->1 lalu jepret otomatis (1 pose). 
-    // Untuk photo strip multi-pose, user klik Foto beberapa kali.
-    for (let i = 3; i >= 0; i--) {
-      cd.textContent = i === 0 ? '📸' : String(i);
-      cd.classList.add('show');
-      await sleep(i === 0 ? 500 : 700);
-      cd.classList.remove('show');
-      await sleep(100);
+    const recOk = LifmarReplay.start();
+    if (!recOk) {
+      // tetap lanjut sesi walau video gagal
+      console.warn('Video recording gagal, sesi foto tetap jalan.');
     }
-    // Jepret
-    snapPhoto();
+
+    sessionActive = true;
+    sessionStartTs = Date.now();
+
+    // Sinkronkan ke remote (partner juga mulai video + sesi)
+    window.LifmarSocket.sessionStart();
+
+    // Timer 4 menit
+    updateSessionUI();
+    sessionTimer = setInterval(updateSessionUI, 500);
+
+    // Otomatis stop setelah 4 menit
+    setTimeout(() => { endSession(); }, SESSION_MS);
+  }
+
+  // Jepret instan (tanpa countdown) selama sesi aktif
+  function snap() {
+    if (!sessionActive) {
+      alert('Tekan tombol "Foto" dulu untuk memulai sesi 4 menit.');
+      return false;
+    }
+    const ok = snapPhoto();
+    if (ok) window.LifmarSocket.shutterRemote();
+    return ok;
+  }
+
+  // Sinkron: partner mulai sesi
+  function onRemoteSessionStart() {
+    if (sessionActive) return;
+    sessionActive = true;
+    sessionStartTs = Date.now();
+    LifmarReplay.reset();
+    LifmarReplay.start();
+    updateSessionUI();
+    sessionTimer = setInterval(updateSessionUI, 500);
+    setTimeout(() => { endSession(); }, SESSION_MS);
+  }
+
+  // Sinkron: partner jepret (host juga foto pada momen sama)
+  function onRemoteShutter() {
+    if (sessionActive) snapPhoto();
+  }
+
+  // Akhiri sesi: hentikan video & beri tahu editor
+  function endSession() {
+    if (!sessionActive) return;
+    sessionActive = false;
+    clearInterval(sessionTimer);
+    sessionTimer = null;
+    LifmarReplay.stop(() => {
+      // setelah video tersimpan, tandai UI
+      window.LifmarEditor.onSessionEnd();
+    });
+    updateSessionUI();
+    window.LifmarSocket.sessionEnd();
+  }
+
+  function updateSessionUI() {
+    const el = document.getElementById('sessionTimer');
+    const bar = el ? el.closest('.session-bar') : null;
+    if (el) {
+      if (sessionActive) {
+        const remain = remainingMs();
+        const m = String(Math.floor(remain / 60000)).padStart(2, '0');
+        const s = String(Math.floor((remain % 60000) / 1000)).padStart(2, '0');
+        el.textContent = `${m}:${s}`;
+        el.classList.add('live');
+        if (bar) bar.classList.add('live');
+      } else {
+        el.textContent = 'Sesi selesai';
+        el.classList.remove('live');
+        if (bar) bar.classList.remove('live');
+      }
+    }
   }
 
   function snapPhoto() {
     const stageVideo = document.getElementById('stageVideo');
-    const stage = document.getElementById('stage').querySelector('.stage-screen');
-    const rect = stage.getBoundingClientRect();
-    const w = rect.width, h = rect.height;
+    if (!stageVideo || !stageVideo.videoWidth) return false;
 
-    // Ambil frame dari video, gambar tanpa distorsi (cover)
     const vw = stageVideo.videoWidth, vh = stageVideo.videoHeight;
-    if (!vw || !vh) return;
-
     const canvas = document.createElement('canvas');
-    canvas.width = 720; canvas.height = 900; // rasio stage 4:5
+    canvas.width = 720; canvas.height = 900;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#111';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingQuality = 'high';
 
-    // cover crop
     const scale = Math.max(canvas.width / vw, canvas.height / vh);
     const dw = vw * scale, dh = vh * scale;
-    const dx = (canvas.width - dw) / 2, dy = (canvas.height - dh) / 2;
-    ctx.drawImage(stageVideo, dx, dy, dw, dh);
+    ctx.drawImage(stageVideo, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
 
-    // Kamera depan feed-nya ter-mirror (seperti cermin). Flip hasilnya
-    // agar foto normal (bukan cermin). Kamera belakang dibiarkan.
+    // Kamera depan feed-nya ter-mirror -> flip agar hasil normal
     if (window.LifmarWebRTC && LifmarWebRTC.getFacing() === 'user') {
       flipCanvasHorizontal(canvas);
     }
@@ -88,22 +134,17 @@ const LifmarCapture = (() => {
     void flash.offsetWidth;
     flash.classList.add('go');
 
-    // Tampilkan thumbnail di strip
+    // Thumbnail strip
     const strip = document.getElementById('snapshotStrip');
-    const thumb = canvas.toDataURL('image/png');
     const img = document.createElement('img');
     img.className = 'thumb';
-    img.src = thumb;
+    img.src = canvas.toDataURL('image/png');
     strip.appendChild(img);
 
-    // Update review area + socket (remote tahu ada foto baru)
-    window.LifmarSocket.photoTaken(snapshots.length - 1);
     window.LifmarEditor.addPhoto(canvas);
+    return true;
   }
 
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-  // Membalik (un-mirror) canvas secara horizontal agar hasil normal.
   function flipCanvasHorizontal(canvas) {
     const flip = document.createElement('canvas');
     flip.width = canvas.width;
@@ -112,7 +153,6 @@ const LifmarCapture = (() => {
     fctx.translate(canvas.width, 0);
     fctx.scale(-1, 1);
     fctx.drawImage(canvas, 0, 0);
-    // salin balik ke canvas asli
     const cctx = canvas.getContext('2d');
     cctx.clearRect(0, 0, canvas.width, canvas.height);
     cctx.drawImage(flip, 0, 0);
@@ -121,7 +161,11 @@ const LifmarCapture = (() => {
   function resetStrip() {
     snapshots.length = 0;
     document.getElementById('snapshotStrip').innerHTML = '';
+    if (sessionActive) endSession();
   }
 
-  return { startCountdown, onRemoteStart, snapPhoto, getSnapshots, clear, resetStrip };
+  return {
+    startSession, snap, onRemoteSessionStart, onRemoteShutter,
+    endSession, getSnapshots, clear, resetStrip, isActive,
+  };
 })();

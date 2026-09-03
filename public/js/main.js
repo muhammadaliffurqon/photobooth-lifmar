@@ -21,10 +21,9 @@
   const socket = io();
   window.LifmarSocket = {
     socket,
-    syncRecorder() { socket.emit('sync-recorder', { roomId: roomCode, mode: LifmarReplay.getMode(), duration: 3 }); },
-    startCountdownRemote() { socket.emit('start-countdown', { roomId: roomCode, duration: 3 }); },
-    photoTaken(i) { socket.emit('photo-taken', { roomId: roomCode, photoIndex: i }); },
-    shutter() { socket.emit('shutter', { roomId: roomCode }); },
+    sessionStart() { socket.emit('session-start', { roomId: roomCode }); },
+    sessionEnd() { socket.emit('session-end', { roomId: roomCode }); },
+    shutterRemote() { socket.emit('shutter', { roomId: roomCode }); },
     cameraFlip() { socket.emit('camera-flip', { roomId: roomCode }); },
   };
 
@@ -76,18 +75,28 @@
     socket.emit('register-peer', { roomId: roomCode, peerId: window.LifmarState.peerId });
   });
 
-  // ---------- Countdown receiver (guest ikut) ----------
-  socket.on('countdown-start', (data) => {
+  // ---------- Sesi foto receiver (partner ikut sinkron) ----------
+  socket.on('session-start', () => {
     if (!window.LifmarState.isHost) {
-      // remote mulai: mulai perekaman + countdown paralel
-      LifmarReplay.start(3);
-      LifmarCapture.onRemoteStart();
+      LifmarCapture.onRemoteSessionStart();
     }
   });
 
-  socket.on('sync-recorder', (data) => {
+  socket.on('session-end', () => {
     if (!window.LifmarState.isHost) {
-      LifmarReplay.setMode(data.mode);
+      LifmarCapture.endSession();
+    }
+  });
+
+  socket.on('shutter', () => {
+    if (!window.LifmarState.isHost) {
+      LifmarCapture.onRemoteShutter();
+    }
+  });
+
+  socket.on('camera-flip', () => {
+    if (window.LifmarWebRTC && !window.LifmarState.isHost) {
+      LifmarWebRTC.flip();
     }
   });
 
@@ -110,9 +119,23 @@
     document.getElementById('connectingOverlay').innerHTML = '<h2>Kamera tidak bisa diakses</h2><p>Izinkan akses kamera & coba lagi</p>';
   });
 
-  // Capture
+  // Capture: sekali klik mulai sesi 4 menit + rekam; saat sesi aktif jadi 'jepret'
+  const btnCaptureLabel = document.getElementById('btnCaptureLabel');
+  function updateCaptureButton() {
+    if (LifmarCapture.isActive()) {
+      btnCaptureLabel.textContent = 'Jepret';
+    } else {
+      btnCaptureLabel.textContent = 'Sesi Foto';
+    }
+  }
   btnCapture.addEventListener('click', () => {
-    LifmarCapture.startCountdown();
+    if (LifmarCapture.isActive()) {
+      LifmarCapture.snap();
+    } else {
+      LifmarCapture.startSession();
+      updateCaptureButton();
+      showToast('Sesi 4 menit dimulai — video merekam!');
+    }
   });
 
   btnFlip.addEventListener('click', () => {
@@ -142,6 +165,20 @@
       renderReview();
       renderPreview();
     },
+    onSessionEnd() {
+      showToast('Sesi selesai — video & foto tersimpan!');
+      updateCaptureButton();
+      const timer = document.getElementById('sessionTimer');
+      timer.textContent = 'Sesi selesai';
+      timer.classList.remove('live');
+      const bar = timer.closest('.session-bar');
+      if (bar) bar.classList.remove('live');
+      const replay = document.getElementById('replayVideo');
+      if (window.LifmarReplayData) {
+        replay.hidden = false;
+        replay.src = window.LifmarReplayData.url;
+      }
+    },
     getPhotos() { return photos; },
   };
   window.LifmarEditor = editor;
@@ -162,16 +199,6 @@
       document.querySelectorAll('.format-btn').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       format = b.dataset.format;
-      renderPreview();
-    });
-  });
-
-  // Mode recorder buttons
-  document.querySelectorAll('.mode-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      LifmarReplay.setMode(b.dataset.mode);
       renderPreview();
     });
   });

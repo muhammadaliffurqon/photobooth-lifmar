@@ -204,6 +204,18 @@ body.studio { display: block; }
 
 /* Controls */
 .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+
+/* Sesi bar */
+.session-bar {
+  margin-top: 10px; display: flex; align-items: center; gap: 8px;
+  background: var(--pink-pale); border: 2px solid var(--pink-soft);
+  border-radius: 14px; padding: 8px 14px; font-weight: 700; font-size: 14px;
+  color: var(--text); justify-content: center;
+}
+.session-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; }
+.session-bar.live .session-dot { background: #e05260; animation: blink 1s infinite; }
+.session-bar #sessionTimer.live { color: #c0392b; }
+@keyframes blink { 50% { opacity: 0.2; } }
 .ctrl-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 10px 4px; border: 2px solid var(--pink-soft); background: #fff;
