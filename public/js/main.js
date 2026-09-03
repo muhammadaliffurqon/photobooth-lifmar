@@ -168,6 +168,7 @@
     onSessionEnd() {
       showToast('Sesi selesai — video & foto tersimpan!');
       updateCaptureButton();
+      btnCapture.disabled = false;
       const timer = document.getElementById('sessionTimer');
       timer.textContent = 'Sesi selesai';
       timer.classList.remove('live');
@@ -177,6 +178,14 @@
       if (window.LifmarReplayData) {
         replay.hidden = false;
         replay.src = window.LifmarReplayData.url;
+      }
+    },
+    onAllComplete() {
+      showToast('Foto sudah lengkap (8) — tunggu waktu habis ya!');
+      const label = document.getElementById('btnCaptureLabel');
+      if (label) {
+        label.textContent = 'Menunggu waktu habis…';
+        btnCapture.disabled = true;
       }
     },
     getPhotos() { return photos; },

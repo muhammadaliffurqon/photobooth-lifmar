@@ -6,6 +6,7 @@
 const LifmarCapture = (() => {
   const snapshots = [];
   const SESSION_MS = 4 * 60 * 1000; // 4 menit
+  const MAX_PHOTOS = 8;             // cukup 8 pose = 2 lembar photostrip
   let sessionActive = false;
   let sessionTimer = null;
   let sessionStartTs = 0;
@@ -13,6 +14,7 @@ const LifmarCapture = (() => {
   function getSnapshots() { return snapshots; }
   function clear() { snapshots.length = 0; }
   function isActive() { return sessionActive; }
+  function isComplete() { return snapshots.length >= MAX_PHOTOS; }
   function remainingMs() {
     if (!sessionActive) return 0;
     return Math.max(0, SESSION_MS - (Date.now() - sessionStartTs));
@@ -50,8 +52,13 @@ const LifmarCapture = (() => {
       alert('Tekan tombol "Foto" dulu untuk memulai sesi 4 menit.');
       return false;
     }
+    if (isComplete()) {
+      window.LifmarEditor.onAllComplete?.();
+      return false;
+    }
     const ok = snapPhoto();
     if (ok) window.LifmarSocket.shutterRemote();
+    if (isComplete()) window.LifmarEditor.onAllComplete?.();
     return ok;
   }
 
