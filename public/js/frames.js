@@ -94,8 +94,24 @@ const LifmarFrames = (() => {
   // ==================== render photostrip per lembar ====================
 
   // Membuat satu lembar photostrip portrait dengan foto2 + teks nama/tanggal
+  // Foto ditampilkan PENUH (tanpa crop) dengan rasio asli kamera 4:5,
+  // sehingga semua pose berukuran sama & proposional.
   function renderStrip(snapshots, stripIndex, countPerStrip, totalStrip, opts, theme) {
-    const W = 640, H = 1580; // portrait
+    const margin = 26;
+    const photoX = margin, photoW = 640 - margin * 2; // 588
+    const gap = 10;
+    const headerH = 100;   // area nama di atas
+    const footerH = 110;   // area tanggal di bawah
+
+    // rasio foto asli (720x900 = 4:5)
+    const photoH = Math.round(photoW * (900 / 720)); // 735, tidak ada crop
+
+    // tinggi strip dinamis agar 4 foto penuh muat
+    const count = Math.min(countPerStrip, snapshots.length - stripIndex * countPerStrip);
+    const photoAreaTotal = count * photoH + (count - 1) * gap;
+    const H = headerH + photoAreaTotal + footerH + margin;
+
+    const W = 640;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
     const c = cv.getContext('2d');
@@ -108,20 +124,11 @@ const LifmarFrames = (() => {
     c.fillStyle = grad;
     c.fillRect(0, 0, W, H);
 
-    const margin = 26;
-    // foto area
-    const photoX = margin, photoW = W - margin * 2;
-    const gap = 10;
-    const headerH = 100;   // area nama di atas
-    const footerH = 110;   // area tanggal di bawah
-    const photoAreaH = H - headerH - footerH - margin;
-    const photoH = (photoAreaH - (countPerStrip - 1) * gap) / countPerStrip;
-
-    // --- paste foto2 ---
-    const photos = snapshots.slice(stripIndex * countPerStrip, stripIndex * countPerStrip + countPerStrip);
+    // --- paste foto2 (penuh, tanpa crop, semua identik) ---
+    const photos = snapshots.slice(stripIndex * countPerStrip, stripIndex * countPerStrip + count);
     photos.forEach((p, i) => {
       const y = headerH + i * (photoH + gap);
-      drawCover(c, photoX, y, photoW, photoH, p);
+      drawFull(c, photoX, y, photoW, photoH, p);
       // garis halus tipis
       c.strokeStyle = theme.gold;
       c.lineWidth = 1;
@@ -188,13 +195,17 @@ const LifmarFrames = (() => {
     c.fill();
   }
 
-  function drawCover(c, x, y, w, h, img) {
+  // Gambar foto PENUH (contain) - semua bagian terlihat, tidak ada crop,
+  // rasio asli dipertahankan. Kotak sudah diset rasio 4:5 sama dgn foto.
+  function drawFull(c, x, y, w, h, img) {
     const sw = img.width, sh = img.height;
-    const scale = Math.max(w / sw, h / sh);
+    // fit dalam kotak (contain) tanpa crop & tanpa distorsi
+    const scale = Math.min(w / sw, h / sh);
     const dw = sw * scale, dh = sh * scale;
+    const dx = x + (w - dw) / 2, dy = y + (h - dh) / 2;
     c.fillStyle = '#e9e2d6';
     c.fillRect(x, y, w, h);
-    c.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    c.drawImage(img, dx, dy, dw, dh);
   }
 
   // ==================== render output (dual photostrip) ====================
@@ -207,15 +218,23 @@ const LifmarFrames = (() => {
     const count = Math.min(8, snapshots.length);
     const totalStrip = format === 'single' ? 1 : Math.min(2, Math.ceil(count / countPerStrip));
 
-    // dibutuhkan setidaknya 1 foto per strip kosong diisi placeholder tidak perlu;
-    // cukup render strip sesuai foto yang ada
+    // render semua lembar strip penuh dulu (ukuran asli, proporsional)
+    const strips = [];
+    for (let s = 0; s < totalStrip; s++) {
+      strips.push(renderStrip(snapshots, s, countPerStrip, totalStrip, opts, theme));
+    }
 
-    // --- buat canvas besar: dua lembar berdampingan di atas background krem ---
-    const stripW = 420, stripH = 1040; // skala strip ke kanvas luar
+    // --- skala seragam agar tidak distorsi: lebar lembar tujuan tetap, tinggi ikut rasio ---
+    const targetW = 420;
     const marginOuter = 36;
     const gapStrip = 30;
-    const totalW = marginOuter * 2 + stripW * totalStrip + gapStrip * (totalStrip - 1);
-    const totalH = stripH + marginOuter * 2;
+
+    // tentukan tinggi tiap lembar (preserve ratio)
+    const scaledHeights = strips.map(st => Math.round(st.height * (targetW / st.width)));
+    const maxStripH = Math.max(...scaledHeights);
+
+    const totalW = marginOuter * 2 + targetW * totalStrip + gapStrip * (totalStrip - 1);
+    const totalH = maxStripH + marginOuter * 2;
 
     const out = document.createElement('canvas');
     out.width = totalW; out.height = totalH;
@@ -238,15 +257,16 @@ const LifmarFrames = (() => {
       oc.fill();
     }
 
-    // render tiap lembar strip
-    for (let s = 0; s < totalStrip; s++) {
-      const strip = renderStrip(snapshots, s, countPerStrip, totalStrip, opts, theme);
-      const sx = marginOuter + s * (stripW + gapStrip);
+    // render tiap lembar strip (proporsional, tanpa distorsi)
+    strips.forEach((strip, s) => {
+      const sx = marginOuter + s * (targetW + gapStrip);
+      const sh = scaledHeights[s];
+      const sy = marginOuter + Math.round((maxStripH - sh) / 2); // ratakan atas
       // bayangan lembut di bawah strip
       oc.fillStyle = 'rgba(120,100,70,0.2)';
-      oc.fillRect(sx + 3, marginOuter + 6, stripW, stripH);
-      oc.drawImage(strip, sx, marginOuter, stripW, stripH);
-    }
+      oc.fillRect(sx + 3, sy + 6, targetW, sh);
+      oc.drawImage(strip, sx, sy, targetW, sh);
+    });
 
     return out;
   }
