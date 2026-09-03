@@ -149,30 +149,14 @@
   function renderReview() {
     const area = document.getElementById('reviewArea');
     if (photos.length === 0) {
-      area.innerHTML = '<p class="hint">Ambil beberapa foto dulu (min 1). Kamu bisa ambil sampai <b>4 pose</b>.</p>';
+      area.innerHTML = '<p class="hint">Ambil beberapa foto dulu (min 1). Bisa ambil sampai <b>8 pose</b> (2 lembar photostrip).</p>';
       return;
     }
     area.innerHTML = '<div class="photo-row">' + photos.map(p => `<img class="photo-thumb" src="${p.toDataURL('image/png')}">`).join('') + '</div>';
   }
 
-  // Theme grid
-  const themeGrid = document.getElementById('themeGrid');
-  LifmarFrames.getThemes().forEach(t => {
-    const d = document.createElement('button');
-    d.className = 'theme-item' + (t.id === 'tulip' ? ' active' : '');
-    d.dataset.theme = t.id;
-    d.innerHTML = `<span class="emoji">${t.emoji}</span>${t.label}`;
-    d.addEventListener('click', () => {
-      document.querySelectorAll('.theme-item').forEach(x => x.classList.remove('active'));
-      d.classList.add('active');
-      LifmarFrames.setTheme(t.id);
-      renderPreview();
-    });
-    themeGrid.appendChild(d);
-  });
-
   // Format buttons
-  let format = 'strip';
+  let format = 'dual';
   document.querySelectorAll('.format-btn').forEach(b => {
     b.addEventListener('click', () => {
       document.querySelectorAll('.format-btn').forEach(x => x.classList.remove('active'));

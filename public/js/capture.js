@@ -10,7 +10,7 @@ const LifmarCapture = (() => {
   // Mulai countdown (host trigger -> semua sinkron via socket)
   async function startCountdown() {
     if (isCapturing) return;
-    if (snapshots.length >= 4) { alert('Maksimal 4 pose di strip. Reset dulu untuk foto baru.'); return; }
+    if (snapshots.length >= 8) { alert('Maksimal 8 pose (2 lembar photostrip). Reset dulu untuk foto baru.'); return; }
 
     // Mulai rekam momen (local) - remote juga start via socket
     LifmarReplay.reset();

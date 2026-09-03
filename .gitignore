@@ -6,3 +6,7 @@ npm-debug.log*
 
 .vercel
 .env*
+
+# file referensi desain lokal
+contoh design hasil photobooth*.jpg
+contoh design hasil photobooth*.txt

@@ -82,30 +82,32 @@
           <p class="hint">Ambil beberapa foto dulu (min 1). Kamu bisa ambil sampai <b>4 pose</b>.</p>
         </div>
 
-        <!-- Theme selector -->
+        <!-- Theme info -->
         <div class="opt-group">
-          <label>Tema Bunga</label>
-          <div class="theme-grid" id="themeGrid"></div>
+          <label>Desain</label>
+          <div class="theme-grid">
+            <button class="theme-item active">💍 Foto1 — Premium Dual Photostrip</button>
+          </div>
+          <p class="hint">Desain elegan krem/beige dengan daun & aksen emas, cocok untuk wedding & engagement.</p>
         </div>
 
         <!-- Text customization -->
         <div class="opt-group">
           <label>Nama / Teks</label>
-          <input type="text" id="txtName" placeholder="Nama (contoh: Lifmar & Nadia)" />
-          <input type="text" id="txtSub" placeholder="Sub-teks (opsional, contoh: Selamanya ❤️)" />
-          <input type="text" id="txtMotto" placeholder="Motto (opsional, contoh: Bloom with love)" />
+          <input type="text" id="txtName" placeholder="Nama pasangan (contoh: Lifmar & Nadia)" />
+          <input type="text" id="txtSub" placeholder="Sub-teks (opsional, contoh: Engagement)" />
+          <input type="text" id="txtMotto" placeholder="Motto (opsional, contoh: With love)" />
           <label class="checkline">
             <input type="checkbox" id="chkDate" checked /> Tampilkan tanggal
           </label>
         </div>
 
-        <!-- Layout format -->
+        <!-- Layout format: jumlah lembar -->
         <div class="opt-group">
           <label>Format</label>
           <div class="format-row">
-            <button class="format-btn active" data-format="strip">🎞️ Strip</button>
-            <button class="format-btn" data-format="collage">🧩 Collage</button>
-            <button class="format-btn" data-format="single">🖼️ Single</button>
+            <button class="format-btn active" data-format="dual">🎞️ Dual Strip</button>
+            <button class="format-btn" data-format="single">🖼️ 1 Lembar</button>
           </div>
         </div>
 
