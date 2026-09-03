@@ -138,6 +138,20 @@
     }
   });
 
+  // Ulang foto terakhir (hanya saat sesi aktif & ada foto)
+  const btnRetake = document.getElementById('btnRetake');
+  btnRetake.addEventListener('click', () => {
+    if (!LifmarCapture.isActive()) {
+      showToast('Mulai sesi foto dulu ya');
+      return;
+    }
+    if (LifmarCapture.removeLast()) {
+      showToast('Foto terakhir dihapus — jepret ulang!');
+    } else {
+      showToast('Belum ada foto untuk diulang');
+    }
+  });
+
   btnFlip.addEventListener('click', () => {
     LifmarWebRTC.flip();
     window.LifmarSocket.cameraFlip();
@@ -162,6 +176,14 @@
   const editor = {
     addPhoto(canvas) {
       photos.push(canvas);
+      renderReview();
+      renderPreview();
+    },
+    removeLastPhoto() {
+      photos.pop();
+      // Jika tombol terkunci karena 8 pose, buka lagi (masih bisa jepret ulang)
+      btnCapture.disabled = false;
+      updateCaptureButton();
       renderReview();
       renderPreview();
     },

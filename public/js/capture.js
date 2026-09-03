@@ -165,6 +165,17 @@ const LifmarCapture = (() => {
     cctx.drawImage(flip, 0, 0);
   }
 
+  // Ulang foto terakhir: hapus 1 jepretan terakhir (timer tetap jalan)
+  function removeLast() {
+    if (snapshots.length === 0) return false;
+    snapshots.pop();
+    const strip = document.getElementById('snapshotStrip');
+    const lastThumb = strip.querySelector('.thumb:last-of-type');
+    if (lastThumb) lastThumb.remove();
+    window.LifmarEditor.removeLastPhoto();
+    return true;
+  }
+
   function resetStrip() {
     snapshots.length = 0;
     document.getElementById('snapshotStrip').innerHTML = '';
@@ -172,7 +183,7 @@ const LifmarCapture = (() => {
   }
 
   return {
-    startSession, snap, onRemoteSessionStart, onRemoteShutter,
-    endSession, getSnapshots, clear, resetStrip, isActive,
+    startSession, snap, removeLast, onRemoteSessionStart, onRemoteShutter,
+    endSession, getSnapshots, clear, resetStrip, isActive, isComplete,
   };
 })();
