@@ -46,7 +46,10 @@ const LifmarCapture = (() => {
     setTimeout(() => { endSession(); }, SESSION_MS);
   }
 
-  // Jepret instan (tanpa countdown) selama sesi aktif
+  let countdownTimer = null;
+  let countdownValue = 0;
+
+  // Jepret dengan countdown 3 detik (selama sesi aktif)
   function snap() {
     if (!sessionActive) {
       alert('Tekan tombol "Foto" dulu untuk memulai sesi 4 menit.');
@@ -56,10 +59,39 @@ const LifmarCapture = (() => {
       window.LifmarEditor.onAllComplete?.();
       return false;
     }
-    const ok = snapPhoto();
-    if (ok) window.LifmarSocket.shutterRemote();
-    if (isComplete()) window.LifmarEditor.onAllComplete?.();
-    return ok;
+    if (countdownTimer) return false; // sudah dalam hitung mundur
+
+    const btn = document.getElementById('btnCapture');
+    const label = document.getElementById('btnCaptureLabel');
+    if (btn) btn.disabled = true;
+    if (label) label.textContent = '3';
+
+    const stage = document.getElementById('stage');
+    if (stage) stage.classList.add('counting');
+
+    const cdEl = document.getElementById('countdown');
+    countdownValue = 3;
+    cdEl.textContent = '3';
+    cdEl.classList.add('show');
+
+    countdownTimer = setInterval(() => {
+      countdownValue -= 1;
+      if (countdownValue >= 1) {
+        cdEl.textContent = String(countdownValue);
+        if (label) label.textContent = String(countdownValue);
+      } else {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+        cdEl.classList.remove('show');
+        if (stage) stage.classList.remove('counting');
+        if (btn) btn.disabled = false;
+        if (label) label.textContent = isComplete() ? 'Menunggu waktu habis…' : 'Jepret';
+        const ok = snapPhoto();
+        if (ok) window.LifmarSocket.shutterRemote();
+        if (isComplete()) window.LifmarEditor.onAllComplete?.();
+      }
+    }, 1000);
+    return true;
   }
 
   // Sinkron: partner mulai sesi
@@ -79,12 +111,25 @@ const LifmarCapture = (() => {
     if (sessionActive) snapPhoto();
   }
 
+  function cancelCountdown() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    countdownValue = 0;
+    const cdEl = document.getElementById('countdown');
+    if (cdEl) cdEl.classList.remove('show');
+    const stage = document.getElementById('stage');
+    if (stage) stage.classList.remove('counting');
+  }
+
   // Akhiri sesi: hentikan video & beri tahu editor
   function endSession() {
     if (!sessionActive) return;
     sessionActive = false;
     clearInterval(sessionTimer);
     sessionTimer = null;
+    cancelCountdown();
     LifmarReplay.stop(() => {
       // setelah video tersimpan, tandai UI
       window.LifmarEditor.onSessionEnd();
@@ -128,11 +173,6 @@ const LifmarCapture = (() => {
     const dw = vw * scale, dh = vh * scale;
     ctx.drawImage(stageVideo, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
 
-    // Kamera depan feed-nya ter-mirror -> flip agar hasil normal
-    if (window.LifmarWebRTC && LifmarWebRTC.getFacing() === 'user') {
-      flipCanvasHorizontal(canvas);
-    }
-
     snapshots.push(canvas);
 
     // Flash
@@ -152,22 +192,10 @@ const LifmarCapture = (() => {
     return true;
   }
 
-  function flipCanvasHorizontal(canvas) {
-    const flip = document.createElement('canvas');
-    flip.width = canvas.width;
-    flip.height = canvas.height;
-    const fctx = flip.getContext('2d');
-    fctx.translate(canvas.width, 0);
-    fctx.scale(-1, 1);
-    fctx.drawImage(canvas, 0, 0);
-    const cctx = canvas.getContext('2d');
-    cctx.clearRect(0, 0, canvas.width, canvas.height);
-    cctx.drawImage(flip, 0, 0);
-  }
-
   // Ulang foto terakhir: hapus 1 jepretan terakhir (timer tetap jalan)
   function removeLast() {
     if (snapshots.length === 0) return false;
+    cancelCountdown();
     snapshots.pop();
     const strip = document.getElementById('snapshotStrip');
     const lastThumb = strip.querySelector('.thumb:last-of-type');
