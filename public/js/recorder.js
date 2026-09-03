@@ -1,4 +1,4 @@
-// Photobooth Lifmar - Sesi Rekam Video (satu klip penuh per sesi 4 menit)
+// Photobooth Lifmar - Sesi Rekam Video (satu klip penuh per sesi 2 menit)
 // Video merekam sepanjang sesi berfoto, tersimpan di window.LifmarReplayData
 
 const LifmarReplay = (() => {

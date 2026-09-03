@@ -1,11 +1,11 @@
-// Photobooth Lifmar - Capture engine (sesi 4 menit)
-// Klik 'Foto' = mulai sesi 4 menit + rekam video. Selama sesi, user bebas
-// klik 'Jepret' kapan saja untuk menambah pose. Pas 4 menit habis, sesi
+// Photobooth Lifmar - Capture engine (sesi 2 menit)
+// Klik 'Foto' = mulai sesi 2 menit + rekam video. Selama sesi, user bebas
+// klik 'Jepret' kapan saja untuk menambah pose. Pas 2 menit habis, sesi
 // berhenti otomatis, video tersimpan & semua foto terkumpul.
 
 const LifmarCapture = (() => {
   const snapshots = [];
-  const SESSION_MS = 4 * 60 * 1000; // 4 menit
+  const SESSION_MS = 2 * 60 * 1000; // 2 menit
   const MAX_PHOTOS = 8;             // cukup 8 pose = 2 lembar photostrip
   let sessionActive = false;
   let sessionTimer = null;
@@ -38,11 +38,11 @@ const LifmarCapture = (() => {
     // Sinkronkan ke remote (partner juga mulai video + sesi)
     window.LifmarSocket.sessionStart();
 
-    // Timer 4 menit
+    // Timer 2 menit
     updateSessionUI();
     sessionTimer = setInterval(updateSessionUI, 500);
 
-    // Otomatis stop setelah 4 menit
+    // Otomatis stop setelah 2 menit
     setTimeout(() => { endSession(); }, SESSION_MS);
   }
 
@@ -52,7 +52,7 @@ const LifmarCapture = (() => {
   // Jepret dengan countdown 3 detik (selama sesi aktif)
   function snap() {
     if (!sessionActive) {
-      alert('Tekan tombol "Foto" dulu untuk memulai sesi 4 menit.');
+      alert('Tekan tombol "Foto" dulu untuk memulai sesi 2 menit.');
       return false;
     }
     if (isComplete()) {

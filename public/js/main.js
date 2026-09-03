@@ -119,7 +119,7 @@
     document.getElementById('connectingOverlay').innerHTML = '<h2>Kamera tidak bisa diakses</h2><p>Izinkan akses kamera & coba lagi</p>';
   });
 
-  // Capture: sekali klik mulai sesi 4 menit + rekam; saat sesi aktif jadi 'jepret'
+  // Capture: sekali klik mulai sesi 2 menit + rekam; saat sesi aktif jadi 'jepret'
   const btnCaptureLabel = document.getElementById('btnCaptureLabel');
   function updateCaptureButton() {
     if (LifmarCapture.isActive()) {
@@ -134,7 +134,7 @@
     } else {
       LifmarCapture.startSession();
       updateCaptureButton();
-      showToast('Sesi 4 menit dimulai — video merekam!');
+      showToast('Sesi 2 menit dimulai — video merekam!');
     }
   });
 
