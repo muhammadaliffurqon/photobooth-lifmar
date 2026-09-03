@@ -93,25 +93,22 @@ const LifmarFrames = (() => {
 
   // ==================== render photostrip per lembar ====================
 
-  // Membuat satu lembar photostrip portrait dengan foto2 + teks nama/tanggal
-  // Foto ditampilkan PENUH (tanpa crop) dengan rasio asli kamera 4:5,
-  // sehingga semua pose berukuran sama & proposional.
+  // Membuat satu lembar photostrip LANDSCAPE: foto-foto berjajar ke samping.
+  // Foto tampil PENUH (tanpa crop, rasio asli 4:5). Nama di atas, tanggal di bawah.
   function renderStrip(snapshots, stripIndex, countPerStrip, totalStrip, opts, theme) {
     const margin = 26;
-    const photoX = margin, photoW = 640 - margin * 2; // 588
-    const gap = 10;
-    const headerH = 100;   // area nama di atas
-    const footerH = 110;   // area tanggal di bawah
+    const gap = 14;
+    const headerH = 84;    // area nama di atas
+    const footerH = 96;    // area tanggal di bawah
 
-    // rasio foto asli (720x900 = 4:5)
-    const photoH = Math.round(photoW * (900 / 720)); // 735, tidak ada crop
-
-    // tinggi strip dinamis agar 4 foto penuh muat
     const count = Math.min(countPerStrip, snapshots.length - stripIndex * countPerStrip);
-    const photoAreaTotal = count * photoH + (count - 1) * gap;
-    const H = headerH + photoAreaTotal + footerH + margin;
+    // foto portrait 4:5, tinggi tetap, lebar mengikuti rasio
+    const photoH = 400;
+    const photoW = Math.round(photoH * (720 / 900)); // 320, rasio 4:5 tanpa crop
 
-    const W = 640;
+    const W = margin * 2 + count * photoW + (count - 1) * gap;
+    const H = headerH + photoH + footerH;
+
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
     const c = cv.getContext('2d');
@@ -124,54 +121,54 @@ const LifmarFrames = (() => {
     c.fillStyle = grad;
     c.fillRect(0, 0, W, H);
 
-    // --- paste foto2 (penuh, tanpa crop, semua identik) ---
+    // --- paste foto2 berjajar horizontal (penuh, tanpa crop, semua identik) ---
     const photos = snapshots.slice(stripIndex * countPerStrip, stripIndex * countPerStrip + count);
+    const yPhoto = headerH;
     photos.forEach((p, i) => {
-      const y = headerH + i * (photoH + gap);
-      drawFull(c, photoX, y, photoW, photoH, p);
+      const x = margin + i * (photoW + gap);
+      drawFull(c, x, yPhoto, photoW, photoH, p);
       // garis halus tipis
       c.strokeStyle = theme.gold;
       c.lineWidth = 1;
-      c.strokeRect(photoX - 0.5, y - 0.5, photoW + 1, photoH + 1);
+      c.strokeRect(x - 0.5, yPhoto - 0.5, photoW + 1, photoH + 1);
     });
 
     // --- header: nama pasangan ---
     c.textAlign = 'center';
-    // garis ornamen atas
-    ornamentLine(c, W / 2, 24, theme);
+    ornamentLine(c, W / 2, 22, theme);
     if (opts.name) {
       c.fillStyle = theme.ink;
-      c.font = "700 34px 'Playfair Display', serif";
+      c.font = "700 32px 'Playfair Display', serif";
       c.shadowColor = 'rgba(0,0,0,0.05)';
       c.shadowBlur = 6;
-      c.fillText(opts.name.toUpperCase(), W / 2, 66, W - margin * 2);
+      c.fillText(opts.name.toUpperCase(), W / 2, 58, W - margin * 2);
       c.shadowBlur = 0;
     }
 
     // --- footer: tanggal ---
-    const fyBase = H - margin - 8;
+    const fyBase = H - 18;
     if (opts.sub) {
       c.fillStyle = theme.goldDark;
-      c.font = "italic 600 20px 'Playfair Display', serif";
-      c.fillText(opts.sub, W / 2, fyBase - 46, W - margin * 2);
+      c.font = "italic 600 19px 'Playfair Display', serif";
+      c.fillText(opts.sub, W / 2, fyBase - 40, W - margin * 2);
     }
     const dateText = opts.showDate !== false ? formatDate(new Date()) : '';
     if (dateText) {
       c.fillStyle = theme.inkSoft;
-      c.font = "500 19px 'Quicksand', sans-serif";
+      c.font = "500 18px 'Quicksand', sans-serif";
       const dateStr = opts.customDate || dateText;
-      c.fillText(dateStr, W / 2, fyBase - 16, W - margin * 2);
+      c.fillText(dateStr, W / 2, fyBase - 12, W - margin * 2);
     }
     if (opts.motto) {
       c.fillStyle = theme.inkSoft;
-      c.font = "italic 500 15px 'Quicksand', sans-serif";
+      c.font = "italic 500 14px 'Quicksand', sans-serif";
       c.fillText(opts.motto, W / 2, fyBase + 8, W - margin * 2);
     }
-    ornamentLine(c, W / 2, H - margin - 34, theme);
+    ornamentLine(c, W / 2, H - margin - 30, theme);
 
     // --- aksen daun & mawar di sudut ---
-    drawBranch(c, margin + 2, margin + 2, 'tl', theme);
-    drawBranch(c, W - margin - 2, margin + 2, 'tr', theme);
+    drawBranch(c, margin + 2, headerH + 2, 'tl', theme);
+    drawBranch(c, W - margin - 2, headerH + 2, 'tr', theme);
     drawBranch(c, margin + 2, H - margin - 2, 'bl', theme);
     drawBranch(c, W - margin - 2, H - margin - 2, 'br', theme);
     drawRose(c, margin + 14, H - margin - 14, 1.0, '#d9b7a8', '#c9a49a');

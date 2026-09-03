@@ -204,11 +204,21 @@
 
   // Download photo
   document.getElementById('btnDownload').addEventListener('click', () => {
-    if (!window.LifmarPreviewCanvas) { alert('Tidak ada foto untuk di-download.'); return; }
-    const a = document.createElement('a');
-    a.href = window.LifmarPreviewCanvas.toDataURL('image/png');
-    a.download = 'lifmar-photobooth.png';
-    a.click();
+    if (!window.LifmarPreviewCanvas) { alert('Tidak ada foto untuk di-download. Ambil foto dulu ya!'); return; }
+    try {
+      const dataUrl = window.LifmarPreviewCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'lifmar-photobooth.png';
+      a.rel = 'noopener';
+      // Harus ada di DOM agar download memicu di semua browser (termasuk mobile)
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 100);
+    } catch (e) {
+      console.error(e);
+      alert('Gagal mengunduh. Coba perangkat lain atau cek konsol.');
+    }
   });
 
   // Download video/gif

@@ -74,6 +74,12 @@ const LifmarCapture = (() => {
     const dx = (canvas.width - dw) / 2, dy = (canvas.height - dh) / 2;
     ctx.drawImage(stageVideo, dx, dy, dw, dh);
 
+    // Kamera depan feed-nya ter-mirror (seperti cermin). Flip hasilnya
+    // agar foto normal (bukan cermin). Kamera belakang dibiarkan.
+    if (window.LifmarWebRTC && LifmarWebRTC.getFacing() === 'user') {
+      flipCanvasHorizontal(canvas);
+    }
+
     snapshots.push(canvas);
 
     // Flash
@@ -96,6 +102,21 @@ const LifmarCapture = (() => {
   }
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // Membalik (un-mirror) canvas secara horizontal agar hasil normal.
+  function flipCanvasHorizontal(canvas) {
+    const flip = document.createElement('canvas');
+    flip.width = canvas.width;
+    flip.height = canvas.height;
+    const fctx = flip.getContext('2d');
+    fctx.translate(canvas.width, 0);
+    fctx.scale(-1, 1);
+    fctx.drawImage(canvas, 0, 0);
+    // salin balik ke canvas asli
+    const cctx = canvas.getContext('2d');
+    cctx.clearRect(0, 0, canvas.width, canvas.height);
+    cctx.drawImage(flip, 0, 0);
+  }
 
   function resetStrip() {
     snapshots.length = 0;

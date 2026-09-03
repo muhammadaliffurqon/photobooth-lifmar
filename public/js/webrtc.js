@@ -126,6 +126,7 @@ const LifmarWebRTC = (() => {
   function getLocalStream() { return localStream; }
   function getPeerId() { return peerId; }
   function hasRemote() { return !!remoteStream; }
+  function getFacing() { return facing; }
 
-  return { init, connectPeer, startCall, flip, getLocalStream, getPeerId, hasRemote };
+  return { init, connectPeer, startCall, flip, getLocalStream, getPeerId, hasRemote, getFacing };
 })();
