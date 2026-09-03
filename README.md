@@ -61,17 +61,36 @@ Buka **http://localhost:3000**
 
 Agar bisa tersambung **dari 2 lokasi berbeda**, deploy signaling server ke hosting gratis.
 
-### Opsi A — Vercel (paling simpel)
+> **⚠️ PENTING:** WebRTC P2P butuh host **signaling & WebSocket** yang sama (satu URL) agar kamera saling tersambung antar perangkat. Halaman web bisa jalan di hosting statis mana pun, tetapi **video call langsung tidak stabil di Vercel** (paket gratis tidak mendukung WebSocket berkepanjangan). Untuk video call jarak jauh yang lancar, gunakan **Railway** atau **Render** di bawah.
+
+### Opsi A — Railway (PALING DISARANKAN untuk video call)
+Railway support WebSocket penuh & ada paket gratis.
+
+1. Push repo ini ke GitHub (sudah ada: `photobooth-lifmar`).
+2. Buka **https://railway.app** → **New Project** → **Deploy from GitHub repo** → pilih repo ini.
+3. Railway otomatis mendeteksi Node.js. Atur:
+   - **Start Command:** `node server.js`
+   - **Variable** (opsional, Railway isi otomatis): `PORT`
+4. Klik **Deploy**, tunggu sampai `Running` (hijau).
+5. Buka URL yang diberikan Railway (format `https://xxx.up.railway.app`), share ke pasangan.
+
+### Opsi B — Render
+Render juga support WebSocket gratis.
+
+1. Di **https://render.com** → **New** → **Web Service** → connect GitHub repo.
+2. Isi:
+   - **Build Command:** `npm install`
+   - **Start Command:** `node server.js`
+3. Pilih instance **Free** → **Create Web Service**.
+4. Tunggu selesai, buka URL `https://xxx.onrender.com` (free instance tidur setelah tidak aktif ±15 menit, lalu bangun saat diakses lagi).
+5. Share URL-nya ke pasangan.
+
+### Opsi C — Vercel (hanya untuk tampilan/tes cepat, video call tidak stabil)
 ```bash
 npm i -g vercel
 vercel
 ```
-Ikuti prompt, dan app langsung live. Share URL-nya ke pasangan.
-
-> Catatan: WebRTC P2P butuh host signaling yang sama (satu URL) agar kamera tersambung antar perangkat.
-
-### Opsi B — Railway / Render
-Push repo ke GitHub lalu deploy dengan blueprint Node.js. Pastikan command `npm start` dan port `process.env.PORT`.
+Ikuti prompt, app langsung live. Halaman & foto tema jalan, tapi **video call real-time bisa terputus** di Vercel (keterbatasan WebSocket gratis).
 
 ---
 
