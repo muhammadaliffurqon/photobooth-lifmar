@@ -35,7 +35,39 @@ const LifmarWebRTC = (() => {
 
   function connectPeer(id) {
     peerId = id;
-    peer = new Peer(id);
+    // Pakai PeerServer dari host yang sama (self-host /peerjs) biar
+    // signaling ikut server Railway/Render, bukan cloud orang lain.
+    const host = window.location.hostname;
+    const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
+    peer = new Peer(id, {
+      host,
+      port: protocol === 'https' ? 443 : (window.location.port || 80),
+      path: '/peerjs',
+      secure: protocol === 'https',
+      debug: 1,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          // OpenRelay TURN gratis - membantu tembus NAT strict
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject',
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelayproject',
+            credential: 'openrelayproject',
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelayproject',
+            credential: 'openrelayproject',
+          },
+        ],
+      },
+    });
     peer.on('open', (myId) => {
       console.log('peer open:', myId);
       window.LifmarState.peerId = myId;

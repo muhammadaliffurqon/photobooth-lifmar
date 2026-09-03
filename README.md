@@ -64,15 +64,13 @@ Agar bisa tersambung **dari 2 lokasi berbeda**, deploy signaling server ke hosti
 > **⚠️ PENTING:** WebRTC P2P butuh host **signaling & WebSocket** yang sama (satu URL) agar kamera saling tersambung antar perangkat. Halaman web bisa jalan di hosting statis mana pun, tetapi **video call langsung tidak stabil di Vercel** (paket gratis tidak mendukung WebSocket berkepanjangan). Untuk video call jarak jauh yang lancar, gunakan **Railway** atau **Render** di bawah.
 
 ### Opsi A — Railway (PALING DISARANKAN untuk video call)
-Railway support WebSocket penuh & ada paket gratis.
+Railway support WebSocket penuh & ada paket gratis. Aplikasi ini sudah **self-host PeerJS signaling** di `/peerjs`, jadi video call ikut server kamu sendiri (bukan cloud orang lain).
 
 1. Push repo ini ke GitHub (sudah ada: `photobooth-lifmar`).
-2. Buka **https://railway.app** → **New Project** → **Deploy from GitHub repo** → pilih repo ini.
-3. Railway otomatis mendeteksi Node.js. Atur:
-   - **Start Command:** `node server.js`
-   - **Variable** (opsional, Railway isi otomatis): `PORT`
-4. Klik **Deploy**, tunggu sampai `Running` (hijau).
-5. Buka URL yang diberikan Railway (format `https://xxx.up.railway.app`), share ke pasangan.
+2. Buka **https://railway.app** → **New Project** → **Deploy from GitHub repo** → pilih repo `photobooth-lifmar`.
+3. Railway otomatis mendeteksi Node.js & mengisi `PORT`. Tidak perlu ubah apa-apa.
+4. Klik **Deploy**, tunggu sampai status **Running** (hijau).
+5. Buka URL yang diberikan Railway (format `https://xxx.up.railway.app`), share ke pasangan. Kedua perangkat buka URL yang sama → video call otomatis tersambung.
 
 ### Opsi B — Render
 Render juga support WebSocket gratis.
