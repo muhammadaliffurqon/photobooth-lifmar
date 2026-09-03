@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photobooth Lifmar — Studio 🌷</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="studio">
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand-mini">🌷 Photobooth <span>Lifmar</span></div>
+    <div class="room-info">
+      <span class="room-badge">Room: <b id="roomCode">...</b></span>
+      <span class="member-badge">👥 <b id="memberCount">1</b></span>
+    </div>
+  </header>
+
+  <!-- Connecting overlay -->
+  <div id="connectingOverlay" class="overlay">
+    <div class="spinner"></div>
+    <h2>Menghubungkan...</h2>
+    <p>Izinkan kamera & mikrofon saat diminta</p>
+  </div>
+
+  <!-- Main studio -->
+  <main class="studio-main" id="studioMain" style="display:none">
+
+    <!-- Left: Video -->
+    <section class="video-section">
+      <div class="video-grid">
+        <div class="video-box">
+          <video id="localVideo" autoplay playsinline muted></video>
+          <span class="video-label">Kamu</span>
+        </div>
+        <div class="video-box">
+          <video id="remoteVideo" autoplay playsinline></video>
+          <span class="video-label">Pasangan</span>
+          <span class="waiting" id="waitingText">Menunggu pasangan...</span>
+        </div>
+      </div>
+
+      <!-- Photobooth stage -->
+      <div class="stage" id="stage">
+        <div class="stage-screen">
+          <video id="stageVideo" autoplay playsinline muted></video>
+          <div class="filter-overlay" id="filterOverlay"></div>
+          <div class="stage-frame" id="stageFrame"></div>
+          <div class="countdown" id="countdown"></div>
+        </div>
+        <div class="flash" id="flash"></div>
+        <div class="snapshot-strip" id="snapshotStrip"></div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button class="ctrl-btn" id="btnCapture" title="Ambil Foto">
+          <span class="btn-icon">📸</span><span>Foto</span>
+        </button>
+        <button class="ctrl-btn" id="btnFlip" title="Ganti Kamera">
+          <span class="btn-icon">🔄</span><span>Kamera</span>
+        </button>
+        <button class="ctrl-btn" id="btnFilter" title="Filter">
+          <span class="btn-icon">✨</span><span>Filter</span>
+        </button>
+        <button class="ctrl-btn" id="btnTheme" title="Tema & Perbesar">
+          <span class="btn-icon">🌷</span><span>Frame</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Right: Editor / result -->
+    <aside class="editor-section">
+      <div class="editor-panel" id="editorPanel">
+        <h3 class="panel-title">🌷 Buat Hasil Foto</h3>
+
+        <!-- Photos review -->
+        <div class="review" id="reviewArea">
+          <p class="hint">Ambil beberapa foto dulu (min 1). Kamu bisa ambil sampai <b>4 pose</b>.</p>
+        </div>
+
+        <!-- Theme selector -->
+        <div class="opt-group">
+          <label>Tema Bunga</label>
+          <div class="theme-grid" id="themeGrid"></div>
+        </div>
+
+        <!-- Text customization -->
+        <div class="opt-group">
+          <label>Nama / Teks</label>
+          <input type="text" id="txtName" placeholder="Nama (contoh: Lifmar & Nadia)" />
+          <input type="text" id="txtSub" placeholder="Sub-teks (opsional, contoh: Selamanya ❤️)" />
+          <input type="text" id="txtMotto" placeholder="Motto (opsional, contoh: Bloom with love)" />
+          <label class="checkline">
+            <input type="checkbox" id="chkDate" checked /> Tampilkan tanggal
+          </label>
+        </div>
+
+        <!-- Layout format -->
+        <div class="opt-group">
+          <label>Format</label>
+          <div class="format-row">
+            <button class="format-btn active" data-format="strip">🎞️ Strip</button>
+            <button class="format-btn" data-format="collage">🧩 Collage</button>
+            <button class="format-btn" data-format="single">🖼️ Single</button>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-wrap">
+          <canvas id="previewCanvas"></canvas>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn-primary" id="btnDownload">⬇️ Download Foto</button>
+        </div>
+
+        <!-- Moment replay -->
+        <div class="opt-group replay-group">
+          <label>📼 Moment Replay</label>
+          <div class="mode-row">
+            <button class="mode-btn active" data-mode="auto">Auto 3s</button>
+            <button class="mode-btn" data-mode="manual">Manual</button>
+            <button class="mode-btn" data-mode="gif">GIF 1s</button>
+          </div>
+          <video id="replayVideo" controls hidden></video>
+          <div class="result-actions">
+            <button class="btn-primary" id="btnDownloadVideo">⬇️ Download Klip</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/recorder.js"></script>
+  <script src="js/webrtc.js"></script>
+  <script src="js/filters.js"></script>
+  <script src="js/capture.js"></script>
+  <script src="js/frames.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

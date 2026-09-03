@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photobooth Lifmar 🌷</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="landing">
+  <!-- Decorative floating petals -->
+  <div class="petals" id="petals"></div>
+
+  <main class="landing-wrap">
+    <div class="logo-badge">🌷</div>
+    <h1 class="brand">Photobooth <span>Lifmar</span></h1>
+    <p class="tagline">Bloom with love — Foto bareng dari mana pun kamu berada.</p>
+
+    <div class="card landing-card">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="create">Buat Room</button>
+        <button class="tab-btn" data-tab="join">Gabung Room</button>
+      </div>
+
+      <form id="createForm" class="tab-panel">
+        <label>Nama kamu
+          <input type="text" id="createName" placeholder="Contoh: Lifmar" required />
+        </label>
+        <button type="submit" class="btn-primary">Buat Room Baru</button>
+      </form>
+
+      <form id="joinForm" class="tab-panel hidden">
+        <label>Nama kamu
+          <input type="text" id="joinName" placeholder="Contoh: Nadia" required />
+        </label>
+        <label>Kode Room
+          <input type="text" id="joinRoom" placeholder="Contoh: LIFMAR01" required />
+        </label>
+        <button type="submit" class="btn-primary">Gabung Room</button>
+      </form>
+    </div>
+
+    <div class="features-row">
+      <span>📹 Video Call 2 Perangkat</span>
+      <span>🌷 Tema Bunga Romantis</span>
+      <span>📜 6 Format Foto</span>
+      <span>📼 Auto Moment Replay</span>
+    </div>
+
+    <footer class="landing-footer">Photobooth Lifmar · Dibuat dengan cinta 🌷</footer>
+  </main>
+
+  <script>
+    function generateRoomCode() {
+      const words = ['LIF','MAR','BLOOM','TULIP','ROSE','LOVE','SWEET','LILY'];
+      const w1 = words[Math.floor(Math.random()*words.length)];
+      const w2 = words[Math.floor(Math.random()*words.length)];
+      const num = Math.floor(10 + Math.random()*90);
+      return (w1 + w2 + num).slice(0, 8);
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab === 'create' ? 'createForm' : 'joinForm').classList.remove('hidden');
+      });
+    });
+
+    // Create room
+    document.getElementById('createForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('createName').value.trim();
+      const room = generateRoomCode();
+      window.location.href = `studio.html?room=${room}&name=${encodeURIComponent(name)}`;
+    });
+
+    // Join room
+    document.getElementById('joinForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('joinName').value.trim();
+      const room = document.getElementById('joinRoom').value.trim().toUpperCase();
+      if (room.length < 4) { alert('Kode room minimal 4 karakter'); return; }
+      window.location.href = `studio.html?room=${encodeURIComponent(room)}&name=${encodeURIComponent(name)}`;
+    });
+
+    // Floating petals
+    const colors = ['#f9c5d5', '#ffb6c1', '#e8a0c0', '#d8b4e2', '#f4d0e0', '#ffffff'];
+    const container = document.getElementById('petals');
+    for (let i = 0; i < 18; i++) {
+      const petal = document.createElement('div');
+      petal.className = 'petal';
+      const size = 8 + Math.random() * 14;
+      petal.style.width = size + 'px';
+      petal.style.height = size + 'px';
+      petal.style.left = Math.random() * 100 + 'vw';
+      petal.style.background = colors[Math.floor(Math.random() * colors.length)];
+      petal.style.animationDuration = (8 + Math.random() * 10) + 's';
+      petal.style.animationDelay = (Math.random() * 8) + 's';
+      petal.style.borderRadius = '50% 50% 50% 50% / 60% 60% 40% 40%';
+      container.appendChild(petal);
+    }
+  </script>
+</body>
+</html>
